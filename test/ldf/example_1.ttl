@@ -1,0 +1,16 @@
+@base <http://example.com/>.
+@prefix : <#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix rel: <http://www.perceive.net/schemas/relationship/>.
+
+:show a <http://schema.org/Movie>.
+
+<#green-goblin>
+    a foaf:Person;
+    foaf:name "Green Goblin";
+    rel:enemyOf <#spiderman>.
+
+<#spiderman>
+    a foaf:Person;
+    foaf:name "Spiderman", "Человек-паук"@ru;
+    rel:enemyOf <#green-goblin>.
