@@ -5,7 +5,7 @@
             [ldf.prefixes :as prefixes]
             [ldf.spec :as spec]))
 
-(defn- make-opts [opts]
+(defn make-opts [opts]
   (-> (or opts {})
       (update :prefixes  (partial merge prefixes/defaults))
       (update :prefixes? #(if (nil? %) true %))

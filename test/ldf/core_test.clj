@@ -4,9 +4,7 @@
             [clojure.string :as string]
             [clojure.edn :as edn]))
 
-(defn s= [s1 s2]
-  (= (string/trim s1)
-     (string/trim s2)))
+(def string= #(= (string/trim %1) (string/trim %2)))
 
 (defn example-1-edn []
   (edn/read-string (slurp "test/ldf/example_1.edn")))
@@ -19,10 +17,10 @@
    :rel "http://www.perceive.net/schemas/relationship/"})
 
 (deftest encode-turtle-test
-  (is (s= (ldf/encode (example-1-edn)
-                      {:prefixes example-1-prefixes
-                       :base     "http://example.com/"})
-          (example-1-ttl))))
+  (is (string= (ldf/encode (example-1-edn)
+                           {:prefixes example-1-prefixes
+                            :base     "http://example.com/"})
+               (example-1-ttl))))
 
 (deftest decode-turtle-test
   )
