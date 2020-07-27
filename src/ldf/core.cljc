@@ -2,14 +2,14 @@
   (:require [clojure.spec.alpha :as s]
             [ldf.turtle.encode :refer [encode-turtle]]
             [ldf.turtle.decode :refer [decode-turtle]]
-            [ldf.prefixes :as prefixes]
+            [ldf.prefix :as prefix]
             [ldf.spec :as spec]))
 
 (defn make-opts [opts]
   (-> (or opts {})
-      (update :prefixes  (partial merge prefixes/defaults))
-      (update :prefixes? #(if (nil? %) true %))
-      (update :format    #(or % :turtle))))
+      (update :namespaces (partial merge prefix/default-namespaces))
+      (update :prefixes?  #(if (nil? %) true %))
+      (update :format     #(or % :turtle))))
 
 (defn- conform [statements]
   (let [data (s/conform ::spec/statements statements)]

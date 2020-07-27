@@ -6,21 +6,29 @@
 
 (def string= #(= (string/trim %1) (string/trim %2)))
 
-(defn example-1-edn []
-  (edn/read-string (slurp "test/ldf/example_1.edn")))
+(defn edn-data []
+  (edn/read-string (slurp "test/ldf/data.edn")))
 
-(defn example-1-ttl []
-  (slurp "test/ldf/example_1.ttl"))
+(defn ttl-data []
+  (slurp "test/ldf/data.ttl"))
 
-(def example-1-prefixes
-  {:_   "#"
+(def example-prefixes
+  {:_   "http://example.com/"
    :rel "http://www.perceive.net/schemas/relationship/"})
 
+(defn encode-test-data []
+  (ldf/encode (edn-data) {:prefixes example-prefixes
+                          :base     "http://example.com/"}))
+
+(def namespaces
+  {""    "http://example.com/#"
+   "rel" "http://www.perceive.net/schemas/relationship/"})
+
+(defn decode-test-data []
+  (ldf/decode (ttl-data) {:namespaces (dissoc namespaces)}))
+
 (deftest encode-turtle-test
-  (is (string= (ldf/encode (example-1-edn)
-                           {:prefixes example-1-prefixes
-                            :base     "http://example.com/"})
-               (example-1-ttl))))
+  (is (string= (encode-test-data) (ttl-data))))
 
 (deftest decode-turtle-test
   )

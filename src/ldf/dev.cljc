@@ -1,7 +1,7 @@
-(ns ldf.terms
-  "This namespace is only intended for development, so the
-   qualified keywords defined here are available for autocompletion
-   in editor and REPL.")
+(ns ldf.dev
+  "This namespace is intended to help the development process.
+   Load it, and the qualified keywords defined here will be
+   available for autocompletion in your editor and REPL.")
 
 (def terms
 

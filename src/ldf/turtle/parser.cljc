@@ -13,47 +13,25 @@
       (throw (ex-info "Parse Turtle Error" (insta/get-failure result)))
       result)))
 
-(defn- base! [env]
-  (fn [x]
-    (swap! env assoc :base x)
+(defn- set-base! [env]
+  (fn [string]
+    (swap! env assoc :base string)
     nil))
 
-(defn- prefix-value [xs env]
-  [(if (= (count xs) 3)
-     (first xs)
-     "")
-   (if (= (last xs) "<#>")
-     (str (:base @env) "#")
-     (last xs))])
-
-(defn- prefix! [env opts]
+(defn- set-prefix-resolver! [env opts]
   (fn [& xs]
-    (let [[extern-prefix url] (prefix-value xs env)]
-      (swap! env assoc-in [:resolvers extern-prefix]
-        (if-let [intern-prefix (get-in opts [:prefixes url])]
-          (partial keyword intern-prefix)
-          (partial str url))))
+    (swap! env assoc-in [:resolvers (first xs)]
+      (if-let [ns (get-in opts [:namespaces (last xs)])]
+        (if (= ns "")
+          keyword
+          (partial keyword ns))
+        (partial str (last xs))))
     nil))
 
 (defn- prefixed-name [env]
   (fn [& xs]
-    (let [[extern-prefix name] (prefix-value xs env)]
-      (prn :prefix extern-prefix name xs)
-      (if-let [func (get-in @env [:resolvers extern-prefix])]
-        (func name)
-        (throw (ex-info (str "Invalid input: undefined prefix '"
-                             extern-prefix "'")
-                        {:prefixed-name xs}))))))
-
-(defn- ref-str [env]
-  (fn [x]
-    (if (string? x)
-      (if (string/starts-with? x "#")
-        (if-let [func (get-in @env [:resolvers ""])]
-          (func x)
-          (:base @env))
-        (str "<" x ">"))
-      x)))
+    (let [func (get-in @env [:resolvers (first xs)])]
+      (func (last xs)))))
 
 (defn- splice-single [& xs]
   (if (= (count xs) 1)
@@ -78,9 +56,10 @@
 (defn transformers [opts]
   (let [env (atom {})]
     {:turtleDoc    (fn [& xs] (vec xs))
-     :base         (base! env)
-     :prefix       (prefix! env opts)
+     :base         (set-base! env)
+     :prefix       (set-prefix-resolver! env opts)
      :PrefixedName (prefixed-name env)
+     :ref          (fn [s] (str (:base @env) s))
      :triples      triples
      :iri          identity
      :subject      identity
@@ -88,11 +67,10 @@
      :string       identity
      :literal      identity
      :object       identity
-     :ref          (ref-str env)
      :objectList   splice-single
      :RDFLiteral   rdf-literal
      :a            (constantly :a)}))
 
 (defn transform [opts tree]
-  (-> (transformers (update opts :prefixes flip-map))
+  (-> (transformers (update opts :namespaces flip-map))
       (insta/transform tree)))
