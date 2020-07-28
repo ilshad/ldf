@@ -21,8 +21,9 @@
                           :base     "http://example.com/"}))
 
 (def namespaces
-  {""    "http://example.com/#"
-   "rel" "http://www.perceive.net/schemas/relationship/"})
+  {""       "http://example.com/#"
+   "rel"    "http://www.perceive.net/schemas/relationship/"
+   "schema" "http://schema.org/"})
 
 (defn decode-test-data []
   (ldf/decode (ttl-data) {:namespaces (dissoc namespaces)}))

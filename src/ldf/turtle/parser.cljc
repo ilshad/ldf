@@ -33,6 +33,20 @@
     (let [func (get-in @env [:resolvers (first xs)])]
       (func (last xs)))))
 
+(defn- handle-iri [env opts]
+  (fn [string]
+    (loop [[[uri label] & namespaces] (:namespaces opts)]
+      (if uri
+        (if (string/starts-with? string uri)
+          (if (= string uri)
+            string
+            (let [relative (string/replace-first string uri "")]
+              (if (= label "")
+                (keyword relative)
+                (keyword label relative))))
+          (recur namespaces))
+        string))))
+
 (defn- splice-single [& xs]
   (if (= (count xs) 1)
     (first xs)
@@ -60,8 +74,8 @@
      :prefix       (set-prefix-resolver! env opts)
      :PrefixedName (prefixed-name env)
      :ref          (fn [s] (str (:base @env) s))
+     :iri          (handle-iri env opts)
      :triples      triples
-     :iri          identity
      :subject      identity
      :predicate    identity
      :string       identity
