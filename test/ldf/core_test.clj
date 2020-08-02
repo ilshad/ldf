@@ -27,8 +27,9 @@
    })
 
 (defn decode-test-data []
-  (ldf/decode (ttl-data) {:namespaces (dissoc namespaces)
-                          :keep-predicate-lists? false}))
+  (ldf/decode (ttl-data) {:namespaces       (dissoc namespaces)
+                          :predicate-lists? false
+                          :object-lists?    false}))
 
 (deftest encode-turtle-test
   (is (string= (encode-test-data) (ttl-data))))

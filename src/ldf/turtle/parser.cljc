@@ -54,11 +54,11 @@
 
 (defn- rdf-literal [& xs]
   (if (= (count xs) 1)
-    [(vec xs)]
+    {:value (first xs)}
     (let [[value [tag _ tag-value]] xs]
       (case tag
-        :langtag [value :lang (keyword tag-value)]
-        [value]))))
+        :langtag {:value value :lang (keyword tag-value)}
+        {:value value}))))
 
 (defn- triples [subject [_ & xs]]
   (if (= (count xs) 2)
@@ -107,10 +107,26 @@
             (recur nodes acc result)))
         result))))
 
+(defn- flatten-object-lists [tree]
+  (loop [nodes  tree
+         acc    nil
+         result []]
+    (if acc
+      (let [[triple & triples] acc]
+        (recur nodes triples (conj result triple)))
+      (if nodes
+        (let [[[subj pred objx :as node] & nodes] nodes]
+          (if (vector? objx)
+            (let [acc (map (fn [obj] [subj pred obj]) objx)]
+              (recur nodes acc result))
+            (recur nodes acc (conj result node))))
+        result))))
+
 (defn- normalize [tree opts]
-  (if (:keep-predicate-lists? opts)
-    (filterv identity tree)
-    (flatten-predicate-lists tree)))
+  (cond-> (if (:predicate-lists? opts)
+            (filterv identity tree)
+            (flatten-predicate-lists tree))
+    (not (:object-lists? opts)) flatten-object-lists))
 
 (defn decode-turtle [text opts]
   (-> (parse text)

@@ -1,9 +1,9 @@
-[[:show         :a           "http://schema.org/Movie"]
+[[:show           :a             "http://schema.org/Movie"]
+ [:green-goblin   :a             :foaf/Person]
+ [:green-goblin   :foaf/name     {:value "Green Goblin"}]
+ [:green-goblin   :rel/enemyOf   :spiderman]
+ [:spiderman      :a             :foaf/Person]
+ [:spiderman      :foaf/name     {:value "Spiderman"}]
+ [:spiderman      :foaf/name     {:value "Человек-паук" :lang :ru}]
+ [:spiderman      :rel/enemyOf   :green-goblin]]
 
- [:green-goblin :a           :foaf/Person]
- [:green-goblin :foaf/name   ["Green Goblin"]]
- [:green-goblin :rel/enemyOf :spiderman]
-
- [:spiderman    :a           :foaf/Person]
- [:spiderman    :foaf/name   [["Spiderman"] ["Человек-паук" :lang :ru]]]
- [:spiderman    :rel/enemyOf :green-goblin]]
