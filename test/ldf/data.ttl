@@ -18,5 +18,6 @@
     foaf:age 42;
     <http://schema.org/weight> 71.25;
     :gravity 1.663E-4;
+    :isSuperHero true;
     rel:enemyOf <#green-goblin>.
 

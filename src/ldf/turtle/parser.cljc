@@ -86,19 +86,20 @@
 
 (defn- transformers [opts]
   (let [env (atom {})]
-    {:turtleDoc    (fn [& xs] (vec xs))
-     :base         (set-base! env)
-     :prefix       (set-prefix-resolver! env opts)
-     :PrefixedName (prefixed-name env)
-     :ref          (fn [s] (str (:base @env) s))
-     :iri          (iri env opts)
-     :triples      triples
-     :objectList   object-list
-     :RDFLiteral   rdf-literal
-     :integer      read-strings
-     :decimal      read-strings
-     :double       read-strings
-     :a            (constantly :a)}))
+    {:turtleDoc      (fn [& xs] (vec xs))
+     :base           (set-base! env)
+     :prefix         (set-prefix-resolver! env opts)
+     :PrefixedName   (prefixed-name env)
+     :ref            (fn [s] (str (:base @env) s))
+     :iri            (iri env opts)
+     :triples        triples
+     :objectList     object-list
+     :RDFLiteral     rdf-literal
+     :integer        read-strings
+     :decimal        read-strings
+     :double         read-strings
+     :BooleanLiteral read-strings
+     :a              (constantly :a)}))
 
 (defn- transform [tree opts]
   (-> (transformers (update opts :namespaces flip-map))
