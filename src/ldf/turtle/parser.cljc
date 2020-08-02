@@ -7,7 +7,7 @@
 
 (defparser parser (grammar))
 
-(defn parse [text]
+(defn- parse [text]
   (let [result (parser text)]
     (if (insta/failure? result)
       (throw (ex-info "Parse Turtle Error" (insta/get-failure result)))
@@ -33,7 +33,7 @@
     (let [func (get-in @env [:resolvers (first xs)])]
       (func (last xs)))))
 
-(defn- handle-iri [env opts]
+(defn- iri [env opts]
   (fn [string]
     (loop [[[uri label] & namespaces] (:namespaces opts)]
       (if uri
@@ -47,44 +47,72 @@
           (recur namespaces))
         string))))
 
-(defn- splice-single [& xs]
+(defn- object-list [& xs]
   (if (= (count xs) 1)
     (first xs)
     (vec xs)))
 
 (defn- rdf-literal [& xs]
   (if (= (count xs) 1)
-    (first xs)
+    [(vec xs)]
     (let [[value [tag _ tag-value]] xs]
       (case tag
-        :langtag {:value value :lang (keyword tag-value)}
-        xs))))
+        :langtag [value :lang (keyword tag-value)]
+        [value]))))
 
 (defn- triples [subject [_ & xs]]
   (if (= (count xs) 2)
     [subject (first xs) (second xs)]
-    [subject (vec (map vec (partition 2 xs)))]))
+    [subject (mapv vec (partition 2 xs))]))
 
 (def flip-map (partial reduce-kv #(assoc %1 %3 (name %2)) {}))
 
-(defn transformers [opts]
+(defn- transformers [opts]
   (let [env (atom {})]
     {:turtleDoc    (fn [& xs] (vec xs))
      :base         (set-base! env)
      :prefix       (set-prefix-resolver! env opts)
      :PrefixedName (prefixed-name env)
      :ref          (fn [s] (str (:base @env) s))
-     :iri          (handle-iri env opts)
+     :iri          (iri env opts)
      :triples      triples
      :subject      identity
      :predicate    identity
      :string       identity
      :literal      identity
      :object       identity
-     :objectList   splice-single
+     :objectList   object-list
      :RDFLiteral   rdf-literal
      :a            (constantly :a)}))
 
-(defn transform [opts tree]
+(defn- transform [tree opts]
   (-> (transformers (update opts :namespaces flip-map))
       (insta/transform tree)))
+
+(defn- flatten-predicate-lists [tree]
+  (loop [nodes  tree
+         acc    nil
+         result []]
+    (if acc
+      (let [[triple & triples] acc]
+        (recur nodes triples (conj result triple)))
+      (if nodes
+        (let [[node & nodes] nodes]
+          (if node
+            (if (= (count node) 2)
+              (let [[subj pred-list] node
+                    acc (map (fn [[pred obj]] [subj pred obj]) pred-list)]
+                (recur nodes acc result))
+              (recur nodes acc (conj result node)))
+            (recur nodes acc result)))
+        result))))
+
+(defn- normalize [tree opts]
+  (if (:keep-predicate-lists? opts)
+    (filterv identity tree)
+    (flatten-predicate-lists tree)))
+
+(defn decode-turtle [text opts]
+  (-> (parse text)
+      (transform opts)
+      (normalize opts)))

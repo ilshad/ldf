@@ -1,7 +1,7 @@
 (ns ldf.core
   (:require [clojure.spec.alpha :as s]
             [ldf.turtle.encode :refer [encode-turtle]]
-            [ldf.turtle.decode :refer [decode-turtle]]
+            [ldf.turtle.parser :refer [decode-turtle]]
             [ldf.prefix :as prefix]
             [ldf.spec :as spec]))
 
