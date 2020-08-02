@@ -1,5 +1,6 @@
 (ns ldf.turtle.parser
-  (:require [clojure.string :as string]
+  (:require [clojure.edn :as edn]
+            [clojure.string :as string]
             #?(:clj  [instaparse.core :as insta :refer [defparser]]
                :cljs [instaparse.core :as insta :refer-macros [defparser]])
             #?(:clj  [ldf.turtle.grammar :refer [grammar]]
@@ -55,10 +56,15 @@
 (defn- rdf-literal [& xs]
   (if (= (count xs) 1)
     {:value (first xs)}
-    (let [[value [tag _ tag-value]] xs]
-      (case tag
-        :langtag {:value value :lang (keyword tag-value)}
-        {:value value}))))
+    (try
+      (let [[value [tag _ tag-value]] xs]
+        (case tag
+          :langtag {:value value :lang (keyword tag-value)}
+          {:xs xs}))
+      (catch Throwable _ {:UNPARSED xs}))))
+
+(defn- edn-read-string [& xs]
+  (edn/read-string (apply str xs)))
 
 (defn- triples [subject [_ & xs]]
   (if (= (count xs) 2)
@@ -69,21 +75,19 @@
 
 (defn- transformers [opts]
   (let [env (atom {})]
-    {:turtleDoc    (fn [& xs] (vec xs))
-     :base         (set-base! env)
-     :prefix       (set-prefix-resolver! env opts)
-     :PrefixedName (prefixed-name env)
-     :ref          (fn [s] (str (:base @env) s))
-     :iri          (iri env opts)
-     :triples      triples
-     :subject      identity
-     :predicate    identity
-     :string       identity
-     :literal      identity
-     :object       identity
-     :objectList   object-list
-     :RDFLiteral   rdf-literal
-     :a            (constantly :a)}))
+    {:turtleDoc      (fn [& xs] (vec xs))
+     :base           (set-base! env)
+     :prefix         (set-prefix-resolver! env opts)
+     :PrefixedName   (prefixed-name env)
+     :ref            (fn [s] (str (:base @env) s))
+     :iri            (iri env opts)
+     :triples        triples
+     :objectList     object-list
+     :RDFLiteral     rdf-literal
+     :integer        edn-read-string
+     :decimal        edn-read-string
+     :double         edn-read-string
+     :a              (constantly :a)}))
 
 (defn- transform [tree opts]
   (-> (transformers (update opts :namespaces flip-map))

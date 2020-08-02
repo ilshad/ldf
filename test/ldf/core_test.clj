@@ -28,8 +28,8 @@
 
 (defn decode-test-data []
   (ldf/decode (ttl-data) {:namespaces       (dissoc namespaces)
-                          :predicate-lists? false
-                          :object-lists?    false}))
+                          :predicate-lists? true
+                          :object-lists?    true}))
 
 (deftest encode-turtle-test
   (is (string= (encode-test-data) (ttl-data))))

@@ -1,6 +1,7 @@
 @base <http://example.com/>.
 @prefix : <#>.
 @prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix rel: <http://www.perceive.net/schemas/relationship/>.
 
 :show a <http://schema.org/Movie>.
@@ -8,9 +9,14 @@
 <#green-goblin>
     a foaf:Person;
     foaf:name "Green Goblin";
+    foaf:age "77"^^xsd:integer;
     rel:enemyOf <#spiderman>.
 
 <#spiderman>
     a foaf:Person;
     foaf:name "Spiderman", "Человек-паук"@ru;
+    foaf:age 42;
+    <http://schema.org/weight> 71.25;
+    :gravity 1.663E-4;
     rel:enemyOf <#green-goblin>.
+
