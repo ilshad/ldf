@@ -23,13 +23,12 @@
 (def namespaces
   {""       "http://example.com/#"
    "rel"    "http://www.perceive.net/schemas/relationship/"
-   ;"schema" "http://schema.org/"
-   })
+   "schema" "http://schema.org/"})
 
 (defn decode-test-data []
-  (ldf/decode (ttl-data) {:namespaces       (dissoc namespaces)
-                          :predicate-lists? true
-                          :object-lists?    true}))
+  (ldf/decode (ttl-data) {:namespaces namespaces
+                          :predicate-lists? false
+                          :object-lists? false}))
 
 (deftest encode-turtle-test
   (is (string= (encode-test-data) (ttl-data))))

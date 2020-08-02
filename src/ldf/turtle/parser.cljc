@@ -53,18 +53,29 @@
     (first xs)
     (vec xs)))
 
+(defn- read-strings [& xs]
+  (edn/read-string (apply str xs)))
+
 (defn- rdf-literal [& xs]
   (if (= (count xs) 1)
     {:value (first xs)}
-    (try
-      (let [[value [tag _ tag-value]] xs]
-        (case tag
-          :langtag {:value value :lang (keyword tag-value)}
-          {:xs xs}))
-      (catch Throwable _ {:UNPARSED xs}))))
+    (let [[value metadata] xs]
+      (cond
+        (coll? metadata)
+        {:value value :lang (keyword (last metadata))}
 
-(defn- edn-read-string [& xs]
-  (edn/read-string (apply str xs)))
+        (and (keyword? metadata)
+             ;; TODO: don't assume ns
+             (#{:xsd/integer :xsd/decimal :xsd/double} metadata))
+        (read-strings value)
+
+        (and (string? metadata)
+             (#{"http://www.w3.org/2001/XMLSchema#integer"
+                "http://www.w3.org/2001/XMLSchema#decimal"
+                "http://www.w3.org/2001/XMLSchema#double"} metadata))
+        (read-strings value)
+
+        :else {:value value :type metadata}))))
 
 (defn- triples [subject [_ & xs]]
   (if (= (count xs) 2)
@@ -75,19 +86,19 @@
 
 (defn- transformers [opts]
   (let [env (atom {})]
-    {:turtleDoc      (fn [& xs] (vec xs))
-     :base           (set-base! env)
-     :prefix         (set-prefix-resolver! env opts)
-     :PrefixedName   (prefixed-name env)
-     :ref            (fn [s] (str (:base @env) s))
-     :iri            (iri env opts)
-     :triples        triples
-     :objectList     object-list
-     :RDFLiteral     rdf-literal
-     :integer        edn-read-string
-     :decimal        edn-read-string
-     :double         edn-read-string
-     :a              (constantly :a)}))
+    {:turtleDoc    (fn [& xs] (vec xs))
+     :base         (set-base! env)
+     :prefix       (set-prefix-resolver! env opts)
+     :PrefixedName (prefixed-name env)
+     :ref          (fn [s] (str (:base @env) s))
+     :iri          (iri env opts)
+     :triples      triples
+     :objectList   object-list
+     :RDFLiteral   rdf-literal
+     :integer      read-strings
+     :decimal      read-strings
+     :double       read-strings
+     :a            (constantly :a)}))
 
 (defn- transform [tree opts]
   (-> (transformers (update opts :namespaces flip-map))
