@@ -1,99 +1,151 @@
 (ns ldf.turtle.encode
-  (:require [ldf.spec :as spec]))
+  (:require [clojure.string :as string]
+            [ldf.turtle.spec :as spec]))
 
-(defmulti form (fn [[tag value] context] tag))
+(defn- uri->prefixed [string opts]
+  (when (re-find #"^https?://" string)
+    (loop [[[uri label] & prefixes] (:prefixes* opts)]
+      (when uri
+        (if (string/starts-with? string uri)
+          (if (= string uri)
+            string
+            (str label ":" (string/replace-first string uri "")))
+          (recur prefixes))))))
 
-(defmethod form :default [[tag value] _]
-  (throw (ex-info "Not Implemented" {:tag tag :value value})))
+(defn- ns-not-found-msg [kw]
+  (str "Base URI for "
+       (if-let [ns (namespace kw)]
+         (str "namespace '" ns "' ")
+         "simple keywords ")
+       "is not defined."))
 
-(defmethod form ::spec/just    [[_ x] c] [x c])
-(defmethod form ::spec/number  [[_ x] c] [x c])
-(defmethod form ::spec/inst    [[_ x] c] [x c])
-(defmethod form ::spec/iri     [[_ x] c] (form x c))
-(defmethod form ::spec/literal [[_ x] c] (form x c))
-(defmethod form ::spec/string  [[_ s] c] [(str "\"" s "\"") c])
-(defmethod form ::spec/a       [_     c] ["a" c])
+(defn- encode-keyword [kw opts]
+  (if-let [uri (get-in opts [:namespaces (or (namespace kw) "")])]
+    (if-let [label (get-in opts [:prefixes* uri])]
+      (str label ":" (name kw))
+      (if (= uri (:base opts))
+        (str "<" (name kw) ">")
+        (str "<" uri (name kw) ">")))
+    (throw (ex-info (ns-not-found-msg kw) {::spec/iri kw}))))
 
-(defmethod form ::spec/quoted [[_ {:keys [value lang type] :as m}] c]
-  [(str "\"" value "\""
-         (cond
-           lang (str "@" (name lang))
-           type (str "^^" (form type c))
-           :else ""))
-   c])
+(defn- encode-iri [iri opts]
+  (cond
+    (string? iri)  (or (uri->prefixed iri opts) (str "<" iri ">"))
+    (keyword? iri) (encode-keyword iri opts)
+    :else          (throw (ex-info "Invalid IRI" {::spec/iri iri}))))
 
-(defmethod form ::spec/prefixed [[_ kw] c]
-  (let [prefix (namespace kw)]
-    (if-let [uri (get-in c [:opts :prefixes (keyword prefix)])]
-      (if (-> c :opts :prefixes?)
-        [(str prefix ":" (name kw)) (update c :prefixes conj (keyword prefix))]
-        [(str "<" uri (name kw) ">") c])
-      (throw (ex-info (str "Prefix for " kw " is not defined.") {:kw kw})))))
+(defn- encode-quoted-literal [{:keys [value lang type]} opts]
+  (str "\"" value "\""
+       (or (and lang (str "@" (name lang)))
+           (and type (str "^^" (encode-iri type opts))))))
 
-(defmethod form ::spec/empty-prefix [[_ kw] c]
-  (if-let [url (get-in c [:opts :prefixes :_])]
-    [(str kw) (update c :prefixes conj :_)]
-    (throw (ex-info "Namespace for empty prefix is not defined." {}))))
+(defn- encode-literal [x opts]
+  (if (map? x)
+    (encode-quoted-literal x opts)
+    x))
 
-(defn- reduce-map [m c keys]
-  (reduce
-    (fn [[result c] k]
-      (let [[s c] (form (m k) c)]
-        [(str result (when-not (empty? result) " ") s) c]))
-    ["" c]
-    keys))
+(defn- encode-subject [subj opts]
+  (encode-iri subj opts))
 
-(defn- reduce-object-list [objects c]
-  (reduce
-    (fn [[result c] object]
-      (let [[s c] (form object c)]
-        [(conj result s) c]))
-    [[] c]
-    objects))
+(defn- encode-predicate [pred opts]
+  (if (= pred :a) ":a" (encode-iri pred opts)))
 
-(defn- reduce-predicate-list [items c]
-  (reduce
-    (fn [[result c] m]
-      (let [[s c] (reduce-map m c [:predicate :object])]
-        [(conj result s) c]))
-    [[] c]
-    items))
+(defn- encode-object [obj opts]
+  (if ((some-fn string? qualified-keyword? simple-keyword?) obj)
+    (encode-iri obj opts)
+    (encode-literal obj opts)))
 
-(defmethod form ::spec/object-list [[_ objects] c]
-  (let [[strings c] (reduce-object-list objects c)]
-    [(apply str (interpose ", " strings)) c]))
-
-(defmethod form ::spec/triple-simple [[_ m] c]
-  (let [[s c] (reduce-map m c [:subject :predicate :object])]
-    [(str s ".\n\n") c]))
-
-(defmethod form ::spec/triple-with-predicate-list [[_ m] c]
-  (let [[subject c]    (form (:subject m) c)
-        [predicates c] (reduce-predicate-list (:predicate-list m) c)]
-    [(str subject "\n    "
-          (apply str (interpose ";\n    " predicates)) ".\n\n")
-     c]))
-
-(defn- reduce-triples [triples context]
-  (reduce
-    (fn [[text context] triple]
-      (let [[string context] (form triple context)]
-        [(str text string) context]))
-    ["" context]
+(defn- encode-triples [triples opts]
+  (map (fn [triple]
+         (map #(%1 %2 opts)
+           [encode-subject encode-predicate encode-object]
+           triple))
     triples))
 
-(defn- print-prefixes [context]
-  (str
-   (when-let [base (-> context :opts :base)]
-     (str "@base <" base ">.\n"))
-   (reduce
-     (fn [result prefix]
-       (str result "@prefix "
-            (case prefix :_ "" (name prefix))
-            ": <" (get-in context [:opts :prefixes prefix]) ">.\n"))
-     "" (sort (:prefixes context)))
-   "\n"))
+(defn- collect-pred-lists [triples]
+  (reduce
+    (fn [result [subj pred obj]]
+      (update result subj
+        (fn [pred-list]
+          (conj (or pred-list []) [pred obj]))))
+    {} triples))
 
-(defn encode-turtle [triples opts]
-  (let [[string context] (reduce-triples triples {:opts opts :prefixes #{}})]
-    (str (print-prefixes context) string)))
+(defn- collect-obj-lists [pred-list]
+  (reduce
+    (fn [result [pred obj]]
+      (update result pred conj obj))
+    {} pred-list))
+
+(defn- normalize-obj-lists [m]
+  (reduce-kv
+    (fn [result pred obj-list]
+      (conj result
+            (let [[obj & more] obj-list]
+              (if more
+                [pred obj-list]
+                [pred obj]))))
+    [] m))
+
+(defn- normalize-lists [m]
+  (reduce-kv
+    (fn [result obj pred-list]
+      (conj result
+            (let [[[pred subj] & more] pred-list]
+              (if more
+                [obj (-> pred-list collect-obj-lists normalize-obj-lists)]
+                [obj pred subj]))))
+    [] m))
+
+(defn- print-objx [objx]
+  (if (coll? objx)
+    (apply str (interpose ", " objx))
+    objx))
+
+(defn- print-pred-list [pred-list]
+  (apply str
+    (interpose ";\n"
+      (map (fn [[pred objx]] (str "    " pred " " (print-objx objx)))
+        pred-list))))
+
+(defn- print-triples [triples]
+  (apply str
+    (map (fn [[subj pred obj]]
+           (if obj
+             (str subj " " pred " " obj ".\n\n")
+             (str subj "\n" (print-pred-list pred) ".\n\n")))
+      triples)))
+
+(defn- print-prefixes [opts]
+  (apply str
+    (map (fn [[label url]] (str "@prefix " label ": <" url ">.\n"))
+      (:prefixes opts))))
+
+(defn- print-base [opts]
+  (when-let [base (:base opts)]
+    (str "@base <" base ">.\n")))
+
+(defn- print-turtle [triples opts]
+  (str (print-base opts)
+       (print-prefixes opts) "\n"
+       (print-triples triples)))
+
+(defn- intern-prefixes [opts]
+  (assoc opts :prefixes*
+    (reduce-kv
+      (fn [result label uri]
+        (assoc result
+          (if (re-find #"^https?://" uri)
+            uri
+            (if-let [base (:base opts)]
+              (str base uri)
+              (throw
+               (ex-info (str ":base option is required for prefix " uri)
+                        {:prefix {label uri}}))))
+          label))
+      {} (:prefixes opts))))
+
+(defn encode-turtle [data opts]
+  (-> (encode-triples data (intern-prefixes opts))
+      collect-pred-lists
+      normalize-lists
+      (print-turtle opts)))

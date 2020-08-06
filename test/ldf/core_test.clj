@@ -6,33 +6,41 @@
 
 (def string= #(= (string/trim %1) (string/trim %2)))
 
-(defn edn-data []
-  (edn/read-string (slurp "test/ldf/data.edn")))
-
-(defn ttl-data []
-  (slurp "test/ldf/data.ttl"))
-
-(def example-prefixes
-  {:_   "http://example.com/"
-   :rel "http://www.perceive.net/schemas/relationship/"})
-
-(defn encode-test-data []
-  (ldf/encode (edn-data) {:prefixes example-prefixes
-                          :base     "http://example.com/"}))
+(defn test-edn [] (edn/read-string (slurp "test/ldf/data.edn")))
+(defn test-ttl [] (slurp "test/ldf/data.ttl"))
 
 (def namespaces
-  {""       "http://example.com/#"
-   "rel"    "http://www.perceive.net/schemas/relationship/"
-   ;"schema" "http://schema.org/"
-   })
+  {""    "http://example.com/#"
+   "rel" "http://www.perceive.net/schemas/relationship/"})
+
+(def prefixes
+  {""    "#"
+   "rel" "http://www.perceive.net/schemas/relationship/"})
+
+(def base "http://example.com/")
+
+(defn encode-test-data []
+  (ldf/encode (test-edn) {:namespaces namespaces
+                          :prefixes prefixes
+                          :base base}))
 
 (defn decode-test-data []
-  (ldf/decode (ttl-data) {:namespaces namespaces
+  (ldf/decode (test-ttl) {:namespaces namespaces
                           :predicate-lists? false
                           :object-lists? false}))
 
 (deftest encode-turtle-test
-  (is (string= (encode-test-data) (ttl-data))))
+  (is (string= (encode-test-data) (test-ttl))))
 
 (deftest decode-turtle-test
-  )
+  (is (= (decode-test-data) (test-edn))))
+
+(def opts-out
+  {:namespaces {""     "http://example.com/#"
+                "rel"  "http://www.perceive.net/schemas/relationship/"
+                "foaf" "http://xmlns.com/foaf/0.1/"}
+   :prefixes   {""     "#"
+                "rel"  "http://www.perceive.net/schemas/relationship/"
+                "foaf" "http://xmlns.com/foaf/0.1/"
+                "xsd"  "http://www.w3.org/2001/XMLSchema#"}
+   :base       "http://example.com/"})

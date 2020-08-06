@@ -8,8 +8,8 @@
 
 (defparser parser (grammar))
 
-(defn- parse [text]
-  (let [result (parser text)]
+(defn- parse [string]
+  (let [result (parser string)]
     (if (insta/failure? result)
       (throw (ex-info "Parse Turtle Error" (insta/get-failure result)))
       result)))
@@ -144,7 +144,7 @@
             (flatten-predicate-lists tree))
     (not (:object-lists? opts)) flatten-object-lists))
 
-(defn decode-turtle [text opts]
-  (-> (parse text)
+(defn decode-turtle [string opts]
+  (-> (parse string)
       (transform opts)
       (normalize opts)))

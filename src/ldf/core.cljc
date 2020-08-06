@@ -1,32 +1,23 @@
 (ns ldf.core
-  (:require [clojure.spec.alpha :as s]
-            [ldf.turtle.encode :refer [encode-turtle]]
+  (:require [ldf.turtle.encode :refer [encode-turtle]]
             [ldf.turtle.parser :refer [decode-turtle]]
-            [ldf.prefix :as prefix]
-            [ldf.spec :as spec]))
+            [ldf.prefix :as prefix]))
 
 (defn make-opts [opts]
   (-> (or opts {})
       (update :namespaces (partial merge prefix/default-namespaces))
-      (update :prefixes?  #(if (nil? %) true %))
       (update :format     #(or % :turtle))))
 
-(defn- conform [statements]
-  (let [data (s/conform ::spec/statements statements)]
-    (if (= data ::s/invalid)
-      (throw (ex-info "Invalid" (s/explain-data ::spec/statements statements)))
-      data)))
-
-(defn- encode* [statements opts]
+(defn- encode* [data opts]
   (case (:format opts)
-    :turtle (encode-turtle statements opts)))
+    :turtle (encode-turtle data opts)))
 
-(defn- decode* [text opts]
+(defn- decode* [string opts]
   (case (:format opts)
-    :turtle (decode-turtle text opts)))
+    :turtle (decode-turtle string opts)))
 
-(defn encode [statements & [opts]]
-  (encode* (conform statements) (make-opts opts)))
+(defn encode [data & [opts]]
+  (encode* data (make-opts opts)))
 
-(defn decode [text & [opts]]
-  (decode* text (make-opts opts)))
+(defn decode [string & [opts]]
+  (decode* string (make-opts opts)))
