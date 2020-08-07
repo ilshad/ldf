@@ -16,19 +16,9 @@
         :quoted  (s/keys ::req-un [::value]
                          ::opt-un [::lang ::type])))
 
-(s/def ::subject ::iri)
-
-(s/def ::predicate
-  (s/or :iri ::iri
-        :a   #{:a}))
-
-(s/def ::object
-  (s/or :iri     ::iri
-        :literal ::literal))
-
 (s/def ::triple
-  (s/cat :subject   ::subject
-         :predicate ::predicate
-         :object    ::object))
+  (s/cat :subject   ::iri
+         :predicate (s/or :a #{:a} :iri ::iri)
+         :object    (s/or :iri ::iri :literal ::literal)))
 
 (s/def ::triples (s/coll-of ::triple))
