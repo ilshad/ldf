@@ -2,6 +2,25 @@
   (:require [clojure.string :as string]
             [ldf.turtle.spec :as spec]))
 
+;;
+;; Namespaces and prefixes
+;;
+
+(defn- intern-prefixes [opts]
+  (assoc opts :prefixes*
+    (reduce-kv
+      (fn [result label uri]
+        (assoc result
+          (if (re-find #"^https?://" uri)
+            uri
+            (if-let [base (:base opts)]
+              (str base uri)
+              (throw
+               (ex-info (str ":base option is required for prefix " uri)
+                        {:prefix {label uri}}))))
+          label))
+      {} (:prefixes opts))))
+
 (defn- uri->prefixed [string opts]
   (when (re-find #"^https?://" string)
     (loop [[[uri label] & prefixes] (:prefixes* opts)]
@@ -27,6 +46,10 @@
         (str "<" (name kw) ">")
         (str "<" uri (name kw) ">")))
     (throw (ex-info (ns-not-found-msg kw) {::spec/iri kw}))))
+
+;;
+;; Base syntax
+;;
 
 (defn- encode-iri [iri opts]
   (cond
@@ -62,6 +85,10 @@
            triple))
     triples))
 
+;;
+;; Reduce collections
+;;
+
 (defn- collect-pred-lists [triples]
   (reduce
     (fn [result [subj pred obj]]
@@ -96,6 +123,10 @@
                 [obj pred subj]))))
     [] m))
 
+;;
+;; Build final document
+;;
+
 (defn- print-objx [objx]
   (if (coll? objx)
     (apply str (interpose ", " objx))
@@ -129,20 +160,9 @@
        (print-prefixes opts) "\n"
        (print-triples triples)))
 
-(defn- intern-prefixes [opts]
-  (assoc opts :prefixes*
-    (reduce-kv
-      (fn [result label uri]
-        (assoc result
-          (if (re-find #"^https?://" uri)
-            uri
-            (if-let [base (:base opts)]
-              (str base uri)
-              (throw
-               (ex-info (str ":base option is required for prefix " uri)
-                        {:prefix {label uri}}))))
-          label))
-      {} (:prefixes opts))))
+;;
+;; API
+;;
 
 (defn encode-turtle [data opts]
   (-> (encode-triples data (intern-prefixes opts))

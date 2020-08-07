@@ -1,12 +1,10 @@
 (ns ldf.core
   (:require [ldf.turtle.encode :refer [encode-turtle]]
-            [ldf.turtle.parser :refer [decode-turtle]]
-            [ldf.prefix :as prefix]))
+            [ldf.turtle.parser :refer [decode-turtle]]))
 
-(defn make-opts [opts]
+(defn- make-opts [opts]
   (-> (or opts {})
-      (update :namespaces (partial merge prefix/default-namespaces))
-      (update :format     #(or % :turtle))))
+      (update :format #(or % :turtle))))
 
 (defn- encode* [data opts]
   (case (:format opts)
@@ -15,6 +13,10 @@
 (defn- decode* [string opts]
   (case (:format opts)
     :turtle (decode-turtle string opts)))
+
+;;
+;; Public API
+;;
 
 (defn encode [data & [opts]]
   (encode* data (make-opts opts)))

@@ -6,6 +6,10 @@
             #?(:clj  [ldf.turtle.grammar :refer [grammar]]
                :cljs [ldf.turtle.grammar :refer-macros [grammar]])))
 
+;;
+;; Grammar
+;;
+
 (defparser parser (grammar))
 
 (defn- parse [string]
@@ -13,6 +17,10 @@
     (if (insta/failure? result)
       (throw (ex-info "Parse Turtle Error" (insta/get-failure result)))
       result)))
+
+;;
+;; Namespaces and prefixes
+;;
 
 (defn- set-base! [env]
   (fn [string]
@@ -47,6 +55,10 @@
                 (keyword label relative))))
           (recur namespaces))
         string))))
+
+;;
+;; Transform parse tree
+;;
 
 (defn- object-list [& xs]
   (if (= (count xs) 1)
@@ -105,6 +117,10 @@
   (-> (transformers (update opts :namespaces flip-map))
       (insta/transform tree)))
 
+;;
+;; Flatten trees
+;;
+
 (defn- flatten-predicate-lists [tree]
   (loop [nodes  tree
          acc    nil
@@ -143,6 +159,8 @@
             (filterv identity tree)
             (flatten-predicate-lists tree))
     (not (:object-lists? opts)) flatten-object-lists))
+
+;; API
 
 (defn decode-turtle [string opts]
   (-> (parse string)

@@ -4,43 +4,51 @@
             [clojure.string :as string]
             [clojure.edn :as edn]))
 
+;;
+;; Utils
+;;
+
 (def string= #(= (string/trim %1) (string/trim %2)))
 
-(defn test-edn [] (edn/read-string (slurp "test/ldf/data.edn")))
-(defn test-ttl [] (slurp "test/ldf/data.ttl"))
+;;
+;; Test data
+;;
 
-(def namespaces
-  {""    "http://example.com/#"
-   "rel" "http://www.perceive.net/schemas/relationship/"})
+(defn data-edn [] (edn/read-string (slurp "test/ldf/data.edn")))
+(defn data-in-ttl [] (slurp "test/ldf/data-in.ttl"))
+(defn data-out-ttl [] (slurp "test/ldf/data-out.ttl"))
 
-(def prefixes
-  {""    "#"
-   "rel" "http://www.perceive.net/schemas/relationship/"})
+;;
+;; Encode
+;;
 
-(def base "http://example.com/")
-
-(defn encode-test-data []
-  (ldf/encode (test-edn) {:namespaces namespaces
-                          :prefixes prefixes
-                          :base base}))
-
-(defn decode-test-data []
-  (ldf/decode (test-ttl) {:namespaces namespaces
-                          :predicate-lists? false
-                          :object-lists? false}))
-
-(deftest encode-turtle-test
-  (is (string= (encode-test-data) (test-ttl))))
-
-(deftest decode-turtle-test
-  (is (= (decode-test-data) (test-edn))))
-
-(def opts-out
-  {:namespaces {""     "http://example.com/#"
-                "rel"  "http://www.perceive.net/schemas/relationship/"
-                "foaf" "http://xmlns.com/foaf/0.1/"}
+(def encode-opts
+  {:base       "http://example.com/"
    :prefixes   {""     "#"
                 "rel"  "http://www.perceive.net/schemas/relationship/"
                 "foaf" "http://xmlns.com/foaf/0.1/"
                 "xsd"  "http://www.w3.org/2001/XMLSchema#"}
-   :base       "http://example.com/"})
+   :namespaces {""     "http://example.com/#"
+                "rel"  "http://www.perceive.net/schemas/relationship/"
+                "foaf" "http://xmlns.com/foaf/0.1/"}})
+
+(defn encode []
+  (ldf/encode (data-edn) encode-opts))
+
+(deftest encode-test
+  (is (string= (encode) (data-out-ttl))))
+
+;;
+;; Decode
+;;
+
+(def decode-opts
+  {:namespaces {""    "http://example.com/#"
+                "foaf" "http://xmlns.com/foaf/0.1/"
+                "rel" "http://www.perceive.net/schemas/relationship/"}})
+
+(defn decode []
+  (ldf/decode (data-in-ttl) decode-opts))
+
+(deftest decode-test
+  (is (= (decode) (data-edn))))
