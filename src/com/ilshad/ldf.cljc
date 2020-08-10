@@ -1,6 +1,6 @@
-(ns ldf.core
-  (:require [ldf.turtle.encode :refer [encode-turtle]]
-            [ldf.turtle.parser :refer [decode-turtle]]))
+(ns com.ilshad.ldf
+  (:require [com.ilshad.ldf.turtle.encode :refer [encode-turtle]]
+            [com.ilshad.ldf.turtle.parser :refer [decode-turtle]]))
 
 (defn- make-opts [opts]
   (-> (or opts {})

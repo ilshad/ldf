@@ -1,10 +1,10 @@
-(ns ldf.turtle.parser
+(ns com.ilshad.ldf.turtle.parser
   (:require [clojure.edn :as edn]
             [clojure.string :as string]
-            #?(:clj  [instaparse.core :as insta :refer [defparser]]
-               :cljs [instaparse.core :as insta :refer-macros [defparser]])
-            #?(:clj  [ldf.turtle.grammar :refer [grammar]]
-               :cljs [ldf.turtle.grammar :refer-macros [grammar]])))
+            #?(:cljs [instaparse.core :as insta :refer-macros [defparser]]
+               :clj  [instaparse.core :as insta :refer [defparser]])
+            #?(:cljs [com.ilshad.ldf.turtle.grammar :refer-macros [grammar]]
+               :clj  [com.ilshad.ldf.turtle.grammar :refer [grammar]])))
 
 ;;
 ;; Grammar
@@ -160,7 +160,9 @@
             (flatten-predicate-lists tree))
     (not (:object-lists? opts)) flatten-object-lists))
 
+;;
 ;; API
+;;
 
 (defn decode-turtle [string opts]
   (-> (parse string)

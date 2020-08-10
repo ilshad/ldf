@@ -1,5 +1,5 @@
-(ns ldf.core-test
-  (:require [ldf.core :as ldf]
+(ns com.ilshad.ldf-test
+  (:require [com.ilshad.ldf :as ldf]
             [clojure.test :refer :all]
             [clojure.string :as string]
             [clojure.edn :as edn]))
@@ -14,9 +14,9 @@
 ;; Test data
 ;;
 
-(defn data-edn [] (edn/read-string (slurp "test/ldf/data.edn")))
-(defn data-in-ttl [] (slurp "test/ldf/data-in.ttl"))
-(defn data-out-ttl [] (slurp "test/ldf/data-out.ttl"))
+(defn data-edn [] (edn/read-string (slurp "test/com/ilshad/data.edn")))
+(defn data-in-ttl [] (slurp "test/com/ilshad/data_in.ttl"))
+(defn data-out-ttl [] (slurp "test/com/ilshad/data_out.ttl"))
 
 ;;
 ;; Encode

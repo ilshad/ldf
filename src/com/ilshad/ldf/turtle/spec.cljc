@@ -1,4 +1,4 @@
-(ns ldf.turtle.spec
+(ns com.ilshad.ldf.turtle.spec
   (:require [clojure.spec.alpha :as s]))
 
 (s/def ::iri

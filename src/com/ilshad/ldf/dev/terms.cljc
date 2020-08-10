@@ -1,4 +1,4 @@
-(ns ldf.dev.terms
+(ns com.ilshad.ldf.dev.terms
   "This namespace is intended to help the development process.
    Load it, and the qualified keywords defined here will be
    available for autocompletion in your editor and REPL.")

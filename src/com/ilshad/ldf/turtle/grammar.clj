@@ -1,4 +1,4 @@
-(ns ldf.turtle.grammar
+(ns com.ilshad.ldf.turtle.grammar
   (:require [clojure.java.io :as io]))
 
 (defmacro grammar []

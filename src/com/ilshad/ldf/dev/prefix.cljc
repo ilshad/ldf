@@ -1,4 +1,4 @@
-(ns ldf.dev.prefix)
+(ns com.ilshad.ldf.dev.prefix)
 
 (def namespaces
   {"rdfs"  "http://www.w3.org/2000/01/rdf-schema#"

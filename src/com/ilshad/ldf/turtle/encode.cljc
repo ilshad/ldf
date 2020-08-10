@@ -1,6 +1,6 @@
-(ns ldf.turtle.encode
+(ns com.ilshad.ldf.turtle.encode
   (:require [clojure.string :as string]
-            [ldf.turtle.spec :as spec]))
+            [com.ilshad.ldf.turtle.spec :as spec]))
 
 ;;
 ;; Namespaces and prefixes
