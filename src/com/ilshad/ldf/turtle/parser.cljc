@@ -56,6 +56,12 @@
           (recur namespaces))
         string))))
 
+(defn- expand-ref [env]
+  (fn [string]
+    (str (when-not (re-seq #"@" string)
+           (:base @env))
+         string)))
+
 ;;
 ;; Transform parse tree
 ;;
@@ -105,7 +111,7 @@
      :base           (set-base! env)
      :prefix         (set-prefix-resolver! env opts)
      :PrefixedName   (prefixed-name env)
-     :ref            (fn [s] (str (:base @env) s))
+     :ref            (expand-ref env)
      :iri            (iri env opts)
      :triples        triples
      :objectList     object-list
