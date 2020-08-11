@@ -21,3 +21,5 @@
     :isSuperHero true;
     rel:enemyOf <#green-goblin>.
 
+_:alice foaf:knows _:bob .
+_:bob foaf:knows _:alice .

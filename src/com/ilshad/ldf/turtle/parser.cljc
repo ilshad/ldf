@@ -89,6 +89,9 @@
 
         :else {:value value :type metadata}))))
 
+(defn- blank-node [& xs]
+  xs)
+
 (defn- triples [subject [_ & xs]]
   (if (= (count xs) 2)
     [subject (first xs) (second xs)]
@@ -107,6 +110,7 @@
      :triples        triples
      :objectList     object-list
      :RDFLiteral     rdf-literal
+     :BlankNode      blank-node
      :integer        read-strings
      :decimal        read-strings
      :double         read-strings

@@ -2,4 +2,4 @@
   (:require [clojure.java.io :as io]))
 
 (defmacro grammar []
-  (slurp (io/resource "turtle.bnf")))
+  (slurp (io/resource "com/ilshad/ldf/turtle.bnf")))
