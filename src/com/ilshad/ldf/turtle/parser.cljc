@@ -63,6 +63,46 @@
          string)))
 
 ;;
+;; Blank Node Property Lists
+;;
+
+(defn- blank-node-id []
+  (rand-int 1000))
+
+(defn- blank-node-property-list? [x]
+  (and (vector? x) (= (first x) :blankNodePropertyList)))
+
+(defn- object-blank-node-property-list [env]
+  (fn [[pred obj]]
+    (if (blank-node-property-list? obj)
+      (let [[_ [_ & pol]] obj
+            id (blank-node-id)]
+        (swap! env assoc-in [:blank-nodes id]
+          (mapv (object-blank-node-property-list env)
+            (partition 2 pol)))
+        (swap! env update :blank-nodes-ids conj id)
+        [pred id])
+      [pred obj])))
+
+(defn- save-blank-node-property-list [[_ [_ & pol]] xs env]
+  (let [id (blank-node-id)]
+    (swap! env assoc-in [:blank-nodes id]
+      (mapv (object-blank-node-property-list env)
+        (partition 2 (concat pol xs))))
+    (swap! env update :blank-nodes-ids conj id))
+  nil)
+
+(defn- restore-blank-node-property-lists [env]
+  (fn [tree]
+    (let [nodes (:blank-nodes @env)]
+      (reduce
+        (fn [tree id]
+          (concat tree (map (fn [[pred obj]] [id pred obj])
+                         (get nodes id))))
+        tree
+        (:blank-nodes-ids @env)))))
+
+;;
 ;; Transform parse tree
 ;;
 
@@ -95,33 +135,35 @@
 
         :else {:value value :type metadata}))))
 
-(defn- blank-node [& xs]
-  xs)
+(defn- triples [env]
+  (fn [subject [_ & xs]]
+    (if (blank-node-property-list? subject)
+      (save-blank-node-property-list subject xs env)
+      [subject (mapv vec (partition 2 xs))])))
 
-(defn- triples [subject [_ & xs]]
-  (if (= (count xs) 2)
-    [subject (first xs) (second xs)]
-    [subject (mapv vec (partition 2 xs))]))
+(defn- document [env]
+  (fn [& xs]
+    {:tree (vec xs)
+     :env  env}))
 
 (def flip-map (partial reduce-kv #(assoc %1 %3 (name %2)) {}))
 
 (defn- transformers [opts]
   (let [env (atom {})]
-    {:turtleDoc      (fn [& xs] (vec xs))
-     :base           (set-base! env)
-     :prefix         (set-prefix-resolver! env opts)
-     :PrefixedName   (prefixed-name env)
-     :ref            (expand-ref env)
-     :iri            (iri env opts)
-     :triples        triples
-     :objectList     object-list
-     :RDFLiteral     rdf-literal
-     :BlankNode      blank-node
-     :integer        read-strings
-     :decimal        read-strings
-     :double         read-strings
-     :BooleanLiteral read-strings
-     :a              (constantly :a)}))
+    {:turtleDoc             (document env)
+     :base                  (set-base! env)
+     :prefix                (set-prefix-resolver! env opts)
+     :PrefixedName          (prefixed-name env)
+     :ref                   (expand-ref env)
+     :iri                   (iri env opts)
+     :triples               (triples env)
+     :objectList            object-list
+     :RDFLiteral            rdf-literal
+     :integer               read-strings
+     :decimal               read-strings
+     :double                read-strings
+     :BooleanLiteral        read-strings
+     :a                     (constantly :a)}))
 
 (defn- transform [tree opts]
   (-> (transformers (update opts :namespaces flip-map))
@@ -164,10 +206,11 @@
             (recur nodes acc (conj result node))))
         result))))
 
-(defn- normalize [tree opts]
+(defn- normalize [{:keys [tree env]} opts]
   (cond-> (if (:predicate-lists? opts)
             (filterv identity tree)
             (flatten-predicate-lists tree))
+    true ((restore-blank-node-property-lists env))
     (not (:object-lists? opts)) flatten-object-lists))
 
 ;;

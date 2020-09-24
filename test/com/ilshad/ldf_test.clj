@@ -45,7 +45,9 @@
 (def decode-opts
   {:namespaces {""    "http://example.com/#"
                 "foaf" "http://xmlns.com/foaf/0.1/"
-                "rel" "http://www.perceive.net/schemas/relationship/"}})
+                "rel" "http://www.perceive.net/schemas/relationship/"}
+   :object-lists? false
+   :predicate-lists? false})
 
 (defn decode []
   (ldf/decode (data-in-ttl) decode-opts))
