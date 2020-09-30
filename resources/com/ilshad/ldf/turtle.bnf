@@ -25,14 +25,14 @@ BooleanLiteral        ::= 'true' | 'false'
 <string>              ::= STRING_LITERAL_QUOTE | STRING_LITERAL_SINGLE_QUOTE | STRING_LITERAL_LONG_SINGLE_QUOTE | STRING_LITERAL_LONG_QUOTE
 iri                   ::= IRIREF | PrefixedName
 PrefixedName          ::= PNAME_LN | PNAME_NS
-BlankNode             ::= BLANK_NODE_LABEL | ANON
+<BlankNode>           ::= BLANK_NODE_LABEL | ANON
 <EOL>                 ::= <#'[\n\r]+'>
 <IRIREF>              ::= FULLIRI | ref
 ref                   ::= <'<'> (#'[^\u0000-\u0020<>\"{}:|^`\\]+' | UCHAR)* <'>'>
 <FULLIRI>             ::= <'<'> (#'[^\u0000-\u0020<>\"{}|^`\\]*' | UCHAR)* <'>'>
 <PNAME_NS>            ::= PN_PREFIX? ':'
 <PNAME_LN>            ::= PNAME_NS PN_LOCAL
-<BLANK_NODE_LABEL>    ::= '_:' (PN_CHARS_U | #'[0-9]') ((PN_CHARS | '.')* PN_CHARS)?
+BLANK_NODE_LABEL      ::= '_:' (PN_CHARS_U | #'[0-9]') ((PN_CHARS | '.')* PN_CHARS)?
 langtag               ::= '@' #'[a-zA-Z]+' ('-' #'[a-zA-Z0-9]+')*
 integer               ::= #'[+-]'? #'[0-9]+'
 decimal               ::= #'[+-]'? #'[0-9]*' '.' #'[0-9]+'
@@ -50,7 +50,7 @@ double                ::= #'[+-]'? (#'[0-9]+' '.' #'[0-9]*' EXPONENT | '.' #'[0-
 <ECHAR>               ::= '\\' #'[tbnrf"\'\\]'
 <WSE>                 ::= WS?  EOL?
 <WS>                  ::= <#'[ \t]*'> | <#'#.*'>
-<ANON>                ::= '[' WSE* ']'
+ANON                  ::= '[' WSE* ']'
 <PN_CHARS_BASE>       ::= #'[a-zA-Z]+'         | #'[\u00C0-\u00D6]+' |
                           #'[\u00D8-\u00F6]+'  | #'[\u00F8-\u02FF]+' |
                           #'[\u0370-\u037D]+'  | #'[\u037F-\u1FFF]+' |

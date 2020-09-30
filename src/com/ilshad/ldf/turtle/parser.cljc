@@ -63,36 +63,46 @@
          string)))
 
 ;;
-;; Blank Node Property Lists
+;; Blank Nodes
 ;;
 
-(defn- blank-node-id []
-  (rand-int 1000))
+(defn- blank-node? [x]
+  (and (vector? x)
+       (#{:ANON :BLANK_NODE_LABEL :blankNodePropertyList}
+        (first x))))
 
-(defn- blank-node-property-list? [x]
-  (and (vector? x) (= (first x) :blankNodePropertyList)))
+(defn- gen-blank-node-id [tag env]
+  (case tag
+    :ANON 0
+    (inc (apply max (:blank-nodes-index env)))))
 
-(defn- object-blank-node-property-list [env]
-  (fn [[pred obj]]
-    (if (blank-node-property-list? obj)
-      (let [[_ [_ & pol]] obj
-            id (blank-node-id)]
-        (swap! env assoc-in [:blank-nodes id]
-          (mapv (object-blank-node-property-list env)
-            (partition 2 pol)))
-        (swap! env update :blank-nodes-ids conj id)
-        [pred id])
-      [pred obj])))
+(defn- traverse-blank-nodes [parent-id property-object-list env]
+  (reduce
+    (fn [env [pred obj]]
+      (if (blank-node? obj)
+        (let [child-pol (rest (second obj))
+              child-id  (gen-blank-node-id child-pol env)]
+          (traverse-blank-nodes child-id
+                                (partition 2 child-pol)
+                                (-> (update env :blank-nodes-index conj
+                                      child-id)
+                                    (update-in [:blank-nodes parent-id] conj
+                                      [pred child-id]))))
+        (update-in env [:blank-nodes parent-id] conj [pred obj])))
+    env property-object-list))
 
-(defn- save-blank-node-property-list [[_ [_ & pol]] xs env]
-  (let [id (blank-node-id)]
-    (swap! env assoc-in [:blank-nodes id]
-      (mapv (object-blank-node-property-list env)
-        (partition 2 (concat pol xs))))
-    (swap! env update :blank-nodes-ids conj id))
+(defn- save-blank-nodes [subj xs env]
+  (swap! env
+    (fn [env]
+      (let [id  (gen-blank-node-id (first subj) env)
+            pol (when (= (first subj) :blankNodePropertyList)
+                  (rest (second subj)))]
+        (traverse-blank-nodes id
+                              (partition 2 (concat pol xs))
+                              (update env :blank-nodes-index conj id)))))
   nil)
 
-(defn- restore-blank-node-property-lists [env]
+(defn- restore-blank-nodes [env]
   (fn [tree]
     (let [nodes (:blank-nodes @env)]
       (reduce
@@ -100,7 +110,7 @@
           (concat tree (map (fn [[pred obj]] [id pred obj])
                          (get nodes id))))
         tree
-        (:blank-nodes-ids @env)))))
+        (:blank-nodes-index @env)))))
 
 ;;
 ;; Transform parse tree
@@ -136,10 +146,10 @@
         :else {:value value :type metadata}))))
 
 (defn- triples [env]
-  (fn [subject [_ & xs]]
-    (if (blank-node-property-list? subject)
-      (save-blank-node-property-list subject xs env)
-      [subject (mapv vec (partition 2 xs))])))
+  (fn [subj [_ & xs]]
+    (if (blank-node? subj)
+      (save-blank-nodes subj xs env)
+      [subj (mapv vec (partition 2 xs))])))
 
 (defn- document [env]
   (fn [& xs]
@@ -148,8 +158,12 @@
 
 (def flip-map (partial reduce-kv #(assoc %1 %3 (name %2)) {}))
 
+(def new-env
+  {:blank-nodes       {}
+   :blank-nodes-index [0]})
+
 (defn- transformers [opts]
-  (let [env (atom {})]
+  (let [env (atom new-env)]
     {:turtleDoc             (document env)
      :base                  (set-base! env)
      :prefix                (set-prefix-resolver! env opts)
@@ -207,11 +221,11 @@
         result))))
 
 (defn- normalize [{:keys [tree env]} opts]
-  (cond-> (if (:predicate-lists? opts)
+  (-> (if (:predicate-lists? opts)
             (filterv identity tree)
             (flatten-predicate-lists tree))
-    true ((restore-blank-node-property-lists env))
-    (not (:object-lists? opts)) flatten-object-lists))
+      ((restore-blank-nodes env))
+      (cond-> (not (:object-lists? opts)) flatten-object-lists)))
 
 ;;
 ;; API

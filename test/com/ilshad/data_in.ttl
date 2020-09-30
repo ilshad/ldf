@@ -24,7 +24,7 @@
 #_:alice foaf:knows _:bob .
 #_:bob foaf:knows _:alice .
 
-#[] foaf:knows [ foaf:name "Bob" ] .
+#[] foaf:knows [ foaf:name "Ken" ] .
 
 [ foaf:name "Alice" ]
     foaf:knows [
