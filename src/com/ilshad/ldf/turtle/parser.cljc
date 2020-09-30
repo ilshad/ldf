@@ -71,35 +71,50 @@
        (#{:ANON :BLANK_NODE_LABEL :blankNodePropertyList}
         (first x))))
 
-(defn- gen-blank-node-id [tag env]
-  (case tag
-    :ANON 0
-    (inc (apply max (:blank-nodes-index env)))))
+(defn- next-blank-node-id [env]
+  (inc (apply max (filter number? (:blank-nodes-index env)))))
+
+(defn- blank-node-id [x env]
+  (if (= (first x) :ANON)
+    [:_ true nil]
+    (if (= (first x) :BLANK_NODE_LABEL)
+      (let [label (keyword (last x))]
+        (if-let [id (get-in env [:blank-nodes-labels label])]
+          [id false nil]
+          [(next-blank-node-id env) true label]))
+      [(next-blank-node-id env) true nil])))
+
+(defn- bnpl [x]
+  (when (= (first x) :blankNodePropertyList)
+    (rest (second x))))
+
+(defn- update-blank-nodes-ids [id add? label env]
+  (let [env (if add?
+              (update env :blank-nodes-index conj id)
+              env)]
+    (if label
+      (assoc-in env [:blank-nodes-labels label] id)
+      env)))
 
 (defn- traverse-blank-nodes [parent-id property-object-list env]
   (reduce
     (fn [env [pred obj]]
       (if (blank-node? obj)
-        (let [child-pol (rest (second obj))
-              child-id  (gen-blank-node-id child-pol env)]
-          (traverse-blank-nodes child-id
-                                (partition 2 child-pol)
-                                (-> (update env :blank-nodes-index conj
-                                      child-id)
-                                    (update-in [:blank-nodes parent-id] conj
-                                      [pred child-id]))))
-        (update-in env [:blank-nodes parent-id] conj [pred obj])))
+        (let [[id add? label] (blank-node-id obj env)]
+          (-> (traverse-blank-nodes id
+                                    (partition 2 (bnpl obj))
+                                    (update-blank-nodes-ids id add? label env))
+              (update-in [:blank-nodes parent-id] (fnil conj []) [pred id])))
+        (update-in env [:blank-nodes parent-id] (fnil conj []) [pred obj])))
     env property-object-list))
 
 (defn- save-blank-nodes [subj xs env]
   (swap! env
     (fn [env]
-      (let [id  (gen-blank-node-id (first subj) env)
-            pol (when (= (first subj) :blankNodePropertyList)
-                  (rest (second subj)))]
+      (let [[id add? label] (blank-node-id subj env)]
         (traverse-blank-nodes id
-                              (partition 2 (concat pol xs))
-                              (update env :blank-nodes-index conj id)))))
+                              (partition 2 (concat (bnpl subj) xs))
+                              (update-blank-nodes-ids id add? label env)))))
   nil)
 
 (defn- restore-blank-nodes [env]
@@ -158,26 +173,27 @@
 
 (def flip-map (partial reduce-kv #(assoc %1 %3 (name %2)) {}))
 
-(def new-env
-  {:blank-nodes       {}
-   :blank-nodes-index [0]})
+(defn- new-env []
+  (atom {:blank-nodes        {}
+         :blank-nodes-index  [0]
+         :blank-nodes-labels {}}))
 
 (defn- transformers [opts]
-  (let [env (atom new-env)]
-    {:turtleDoc             (document env)
-     :base                  (set-base! env)
-     :prefix                (set-prefix-resolver! env opts)
-     :PrefixedName          (prefixed-name env)
-     :ref                   (expand-ref env)
-     :iri                   (iri env opts)
-     :triples               (triples env)
-     :objectList            object-list
-     :RDFLiteral            rdf-literal
-     :integer               read-strings
-     :decimal               read-strings
-     :double                read-strings
-     :BooleanLiteral        read-strings
-     :a                     (constantly :a)}))
+  (let [env (new-env)]
+    {:turtleDoc      (document env)
+     :base           (set-base! env)
+     :prefix         (set-prefix-resolver! env opts)
+     :PrefixedName   (prefixed-name env)
+     :ref            (expand-ref env)
+     :iri            (iri env opts)
+     :triples        (triples env)
+     :objectList     object-list
+     :RDFLiteral     rdf-literal
+     :integer        read-strings
+     :decimal        read-strings
+     :double         read-strings
+     :BooleanLiteral read-strings
+     :a              (constantly :a)}))
 
 (defn- transform [tree opts]
   (-> (transformers (update opts :namespaces flip-map))

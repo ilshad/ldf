@@ -12,4 +12,20 @@
  [:spiderman     "http://schema.org/weight" 71.25]
  [:spiderman     :gravity                   1.663E-4]
  [:spiderman     :isSuperHero               true]
- [:spiderman     :rel/enemyOf               :green-goblin]]
+ [:spiderman     :rel/enemyOf               :green-goblin]
+
+
+ [1 :foaf/knows 2]
+ [2 :foaf/knows 1]
+ [2 :foaf/knows 3]
+ [3 :foaf/name {:value "Mike"}]
+
+ [:_ :foaf/knows 4]
+ [4 :foaf/name {:value "Ken"}]
+
+ [5 :foaf/name {:value "Alice"}]
+ [5 :foaf/knows 6]
+ [6 :foaf/knows 7]
+ [6 :foaf/name {:value "Bob"}]
+ [6 :foaf/mbox "bob@example.com"]
+ [7 :foaf/name {:value "Eve"}]]

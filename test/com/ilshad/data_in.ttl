@@ -21,10 +21,11 @@
     :isSuperHero true ;
     rel:enemyOf <#green-goblin> .
 
-#_:alice foaf:knows _:bob .
-#_:bob foaf:knows _:alice .
+_:alice foaf:knows _:bob .
+_:bob   foaf:knows _:alice .
+_:bob   foaf:knows [ foaf:name "Mike" ] .
 
-#[] foaf:knows [ foaf:name "Ken" ] .
+[] foaf:knows [ foaf:name "Ken" ] .
 
 [ foaf:name "Alice" ]
     foaf:knows [
