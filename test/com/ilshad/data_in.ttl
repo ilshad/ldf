@@ -20,12 +20,15 @@
     :gravity 1.663E-4 ;
     :isSuperHero true ;
     rel:enemyOf <#green-goblin> .
+    
+#[] foaf:knows [ foaf:name "Martin" ] .
 
 _:alice foaf:knows _:bob .
 _:bob   foaf:knows _:alice .
 _:bob   foaf:knows [ foaf:name "Mike" ] .
 
 [] foaf:knows [ foaf:name "Ken" ] .
+
 
 [ foaf:name "Alice" ]
     foaf:knows [

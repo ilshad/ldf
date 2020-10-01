@@ -1,45 +1,53 @@
-# LDF - Linked Data Formats in Clojure/ClojureScript
+# LDF - Linked Data Formats for Clojure/ClojureScript
 
 This library aims to provide a bidirectional bridge between 2 worlds:
 RDF/Linked Data and EDN/Clojure.
 
 ## Features
 
-- EDN Namespaces and RDF Prefixes
+- Mapping between keyword namespaces and RDF prefixes
 
-	In RDF/Turtle the IRI is the identity. With this library, you can
-	use	simple and qualified keywords as internal identifiers,	but only
-	for those URI namespaces where you want to do that. So the prefixes
-	in Turtle IRIs are external, but namespaces in EDN keywords are
-	internal things and they are not interfering with each other.
+	In RDF, the IRI is the identity. In EDN, you can use simple or
+	qualified keywords as their internal representations, but only for
+	those RDF prefixes where you have reason to do that. In other words,
+	IRI prefixes are external, but namespaces for keywords are internal.
+	They are not interfering with each other.
 	
-	In practice, you do not want to convert all the IRIs into keywords,
-	and especially, you do not want to convert IRI prefixes into
-	namespaces for keywords (and vice versa), but:
+	In practice, we are not going to convert all the IRIs into keywords,
+	and their RDF prefixes into Clojure namespaces, and vice versa.
+	Instead:
 
-	- only some namespaces
-	- external prefixes should not determine how internal namespaces
-	  look like and vice versa.
-	- moreover, it is not necessary that input Turtle document will
-	  have prefixes at all.
+	- we need only some prefixes (probably, very few of them) to map
+	  to the namespaces for qualified keywords.
 
-- Terse format for collections
+	- prefixes should not determine how namespaces look like and vice
+	  versa.
 
-	Well-constructed RDF/Turtle document implies to reduce triples
-	into trees with predicate lists and object lists. But when
-	we work with data, we do not need that. All we need are	simple
-	triples: subject, predicate, object. So the parser flattens	these
-	trees and constructor builds the trees for us.
+	- moreover, it is not necessary that an input Turtle document
+	  will have prefixes at all. But we still can use qualified keywords
+	  by "extracting" part of IRI and creating a namespace for that part.
+
+- Handling terse format for collections
+
+	A well-constructed RDF/Turtle document implies to reduce triples
+	into trees with nested predicate lists and object lists. But when
+	we work with data, we do not need that. All we need	are	simple
+	triples: subject, predicate and object. So the parser flattens
+	these trees. On the other hand, the encoder builds the trees for us.
+
+- Handling trees of Blank Node Property Lists
+
+	RDF/Turtle allows Blank Node Property Lists to create nested data
+	structures. The parser transforms everything into a flat list of
+	triples: subject, predicate and object, creating temporary
+	identifiers	for anonymous entities, so we can handle them as
+	datalog-like statements. On the other hand, the encoder builds
+	such terse trees from our data.
 
 - Isomorphic and bidirectional
 
 	The same syntax and semantics both on frontend and backend,
 	both for parsing input documents and producing output documents.
-
-- Precise coverage of the standard
-
-	If a library covers 99% of the standard, these other uncovered
-	1% of the features will constantly arise as issues.
 
 ## Status
 
@@ -47,6 +55,5 @@ This work is in progress.
 
 Currently, the development is concentrated around Turtle standard:
 https://www.w3.org/TR/turtle and it is already quite accurate.
-The main thing left is Blank Nodes, which is TDB. After that,
-and after some testing in production, proper documentation will
-be added and the first version of the library will be released.
+
+TDB: Blank Nodes encoding.

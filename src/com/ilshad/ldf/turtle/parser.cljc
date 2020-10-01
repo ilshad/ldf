@@ -72,7 +72,11 @@
         (first x))))
 
 (defn- next-blank-node-id [env]
-  (inc (apply max (filter number? (:blank-nodes-index env)))))
+  (->> (:blank-nodes-index env)
+       (remove (partial = :_))
+       count
+       (str "_")
+       keyword))
 
 (defn- blank-node-id [x env]
   (if (= (first x) :ANON)
@@ -175,7 +179,7 @@
 
 (defn- new-env []
   (atom {:blank-nodes        {}
-         :blank-nodes-index  [0]
+         :blank-nodes-index  []
          :blank-nodes-labels {}}))
 
 (defn- transformers [opts]

@@ -14,18 +14,19 @@
  [:spiderman     :isSuperHero               true]
  [:spiderman     :rel/enemyOf               :green-goblin]
 
+ [:_0 :foaf/knows :_1]
+ [:_1 :foaf/knows :_0]
+ [:_1 :foaf/knows :_2]
+ [:_2 :foaf/name {:value "Mike"}]
 
- [1 :foaf/knows 2]
- [2 :foaf/knows 1]
- [2 :foaf/knows 3]
- [3 :foaf/name {:value "Mike"}]
+ [:_ :foaf/knows :_3]
+ [:_3 :foaf/name {:value "Ken"}]
 
- [:_ :foaf/knows 4]
- [4 :foaf/name {:value "Ken"}]
+ [:_4 :foaf/name {:value "Alice"}]
+ [:_4 :foaf/knows :_5]
 
- [5 :foaf/name {:value "Alice"}]
- [5 :foaf/knows 6]
- [6 :foaf/knows 7]
- [6 :foaf/name {:value "Bob"}]
- [6 :foaf/mbox "bob@example.com"]
- [7 :foaf/name {:value "Eve"}]]
+ [:_5 :foaf/knows :_6]
+ [:_5 :foaf/name {:value "Bob"}]
+ [:_5 :foaf/mbox "bob@example.com"]
+
+ [:_6 :foaf/name {:value "Eve"}]]
