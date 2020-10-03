@@ -55,5 +55,3 @@ This work is in progress.
 
 Currently, the development is concentrated around Turtle standard:
 https://www.w3.org/TR/turtle and it is already quite accurate.
-
-TDB: Blank Nodes encoding.

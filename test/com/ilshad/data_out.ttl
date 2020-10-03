@@ -20,3 +20,25 @@
     :gravity 1.663E-4;
     :isSuperHero true;
     rel:enemyOf :green-goblin.
+
+_:0 foaf:knows _:1.
+
+_:1
+    foaf:knows _:2, _:0.
+
+_:2 foaf:name "Mike".
+
+[] foaf:knows _:3.
+
+_:3 foaf:name "Ken".
+
+_:4
+    foaf:name "Alice";
+    foaf:knows _:5.
+
+_:5
+    foaf:knows _:6;
+    foaf:name "Bob";
+    foaf:mbox <bob@example.com>.
+
+_:6 foaf:name "Eve".

@@ -38,7 +38,7 @@
          "simple keywords ")
        "is not defined."))
 
-(defn- encode-keyword [kw opts]
+(defn- encode-iri-keyword [kw opts]
   (if-let [uri (get-in opts [:namespaces (or (namespace kw) "")])]
     (if-let [label (get-in opts [:prefixes* uri])]
       (str label ":" (name kw))
@@ -48,14 +48,26 @@
     (throw (ex-info (ns-not-found-msg kw) {::spec/iri kw}))))
 
 ;;
-;; Base syntax
+;; Blank Nodes
+;;
+
+(defn- blank-node? [kw]
+  (and (not (namespace kw)) (string/starts-with? (name kw) "_")))
+
+(defn- encode-blank-node [kw opts]
+  (str "_:" (string/replace-first (name kw) #"_" "")))
+
+;;
+;; Syntax
 ;;
 
 (defn- encode-iri [iri opts]
   (cond
-    (string? iri)  (or (uri->prefixed iri opts) (str "<" iri ">"))
-    (keyword? iri) (encode-keyword iri opts)
-    :else          (throw (ex-info "Invalid IRI" {::spec/iri iri}))))
+    (string? iri)     (or (uri->prefixed iri opts) (str "<" iri ">"))
+    (= iri :_)        "[]"
+    (blank-node? iri) (encode-blank-node iri opts)
+    (keyword? iri)    (encode-iri-keyword iri opts)
+    :else             (throw (ex-info "Invalid IRI" {::spec/iri iri}))))
 
 (defn- encode-quoted-literal [{:keys [value lang type]} opts]
   (str "\"" value "\""
@@ -92,10 +104,16 @@
 (defn- collect-pred-lists [triples]
   (reduce
     (fn [result [subj pred obj]]
-      (update result subj
-        (fn [pred-list]
-          (conj (or pred-list []) [pred obj]))))
-    {} triples))
+      (-> (update result :index
+            (fn [index]
+              (if (get-in result [:triples subj])
+                index
+                (conj index subj))))
+          (update-in [:triples subj]
+            (fn [pred-list]
+              (conj (or pred-list []) [pred obj])))))
+    {:triples {} :index []}
+    triples))
 
 (defn- collect-obj-lists [pred-list]
   (reduce
@@ -114,18 +132,28 @@
     [] m))
 
 (defn- normalize-lists [m]
-  (reduce-kv
-    (fn [result obj pred-list]
-      (conj result
-            (let [[[pred subj] & more] pred-list]
-              (if more
-                [obj (-> pred-list collect-obj-lists normalize-obj-lists)]
-                [obj pred subj]))))
-    [] m))
+  (reduce
+    (fn [result subj]
+      (let [pred-list (get-in m [:triples subj])]
+        (conj result
+              (let [[[pred obj] & more] pred-list]
+                (if more
+                  [subj (-> pred-list collect-obj-lists normalize-obj-lists)]
+                  [subj pred obj])))))
+    [] (:index m)))
 
 ;;
 ;; Build final document
 ;;
+
+(defn- print-base [opts]
+  (when-let [base (:base opts)]
+    (str "@base <" base ">.\n")))
+
+(defn- print-prefixes [opts]
+  (apply str
+    (map (fn [[label url]] (str "@prefix " label ": <" url ">.\n"))
+      (:prefixes opts))))
 
 (defn- print-objx [objx]
   (if (coll? objx)
@@ -145,15 +173,6 @@
              (str subj " " pred " " obj ".\n\n")
              (str subj "\n" (print-pred-list pred) ".\n\n")))
       triples)))
-
-(defn- print-prefixes [opts]
-  (apply str
-    (map (fn [[label url]] (str "@prefix " label ": <" url ">.\n"))
-      (:prefixes opts))))
-
-(defn- print-base [opts]
-  (when-let [base (:base opts)]
-    (str "@base <" base ">.\n")))
 
 (defn- print-turtle [triples opts]
   (str (print-base opts)
