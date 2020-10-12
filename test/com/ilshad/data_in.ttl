@@ -10,7 +10,8 @@
     a foaf:Person ;
     foaf:name "Green Goblin" ;
     foaf:age "77"^^xsd:integer ;
-    rel:enemyOf <#spiderman> .
+    rel:enemyOf <#spiderman> ;
+    foaf:knows [ foaf:name "Jerry" ] .
 
 <#spiderman>
     a foaf:Person ;
@@ -19,15 +20,24 @@
     <http://schema.org/weight> 71.25 ;
     :gravity 1.663E-4 ;
     :isSuperHero true ;
-    rel:enemyOf <#green-goblin> .
-
-# Blank Nodes
+    rel:enemyOf <#green-goblin> ;
+    foaf:knows _:bob .
 
 _:alice foaf:knows _:bob .
-_:bob   foaf:knows _:alice .
-_:bob   foaf:knows [ foaf:name "Mike" ] .
 
-[] foaf:knows [ foaf:name "Ken" ] .
+_:bob foaf:knows _:alice .
+
+_:bob foaf:knows [
+        foaf:name "Mike" ;
+        foaf:age 33 ;
+        foaf:knows [
+            foaf:name "Tom"
+            ]
+        ] .
+
+[] foaf:knows [
+        foaf:name "Ken" ;
+        foaf:age 27 ] .
 
 [ foaf:name "Alice" ]
     foaf:knows [

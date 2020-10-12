@@ -1,33 +1,43 @@
-[[:show          :a                         "http://schema.org/Movie"]
+[[:show         :a                         "http://schema.org/Movie"]
+ [:green-goblin :a                         :foaf/Person]
+ [:green-goblin :foaf/name                 {:value "Green Goblin"}]
+ [:green-goblin :foaf/age                  77]
+ [:green-goblin :rel/enemyOf               :spiderman]
+ [:green-goblin :foaf/knows                :_0]
 
- [:green-goblin  :a                         :foaf/Person]
- [:green-goblin  :foaf/name                 {:value "Green Goblin"}]
- [:green-goblin  :foaf/age                  77]
- [:green-goblin  :rel/enemyOf               :spiderman]
+ [:_0           :foaf/name                 {:value "Jerry"}]
 
- [:spiderman     :a                         :foaf/Person]
- [:spiderman     :foaf/name                 {:value "Spiderman"}]
- [:spiderman     :foaf/name                 {:value "Человек-паук" :lang :ru}]
- [:spiderman     :foaf/age                  42]
- [:spiderman     "http://schema.org/weight" 71.25]
- [:spiderman     :gravity                   1.663E-4]
- [:spiderman     :isSuperHero               true]
- [:spiderman     :rel/enemyOf               :green-goblin]
+ [:spiderman    :a                         :foaf/Person]
+ [:spiderman    :foaf/name                 {:value "Spiderman"}]
+ [:spiderman    :foaf/name                 {:value "Человек-паук", :lang :ru}]
+ [:spiderman    :foaf/age                  42]
+ [:spiderman    "http://schema.org/weight" 71.25]
+ [:spiderman    :gravity                   1.663E-4]
+ [:spiderman    :isSuperHero               true]
+ [:spiderman    :rel/enemyOf               :green-goblin]
+ [:spiderman    :foaf/knows                :_1]
 
- ;; Blank Nodes
- 
- [:_0            :foaf/knows                :_1]
- [:_1            :foaf/knows                :_0]
- [:_1            :foaf/knows                :_2]
- [:_2            :foaf/name                 {:value "Mike"}]
+ ;; _:alice and _:bob blank nodes
+ [:_2           :foaf/knows                :_1]
+ [:_1           :foaf/knows                :_2]
+ [:_1           :foaf/knows                :_4]
 
- [:_             :foaf/knows                :_3]
- [:_3            :foaf/name                 {:value "Ken"}]
+ ;; _:bob's nested
+ [:_3           :foaf/name                 {:value "Tom"}]
+ [:_4           :foaf/name                 {:value "Mike"}]
+ [:_4           :foaf/age                  33]
+ [:_4           :foaf/knows                :_3]
 
- [:_4            :foaf/name                 {:value "Alice"}]
- [:_4            :foaf/knows                :_5]
- [:_5            :foaf/knows                :_6]
- [:_5            :foaf/name                 {:value "Bob"}]
- [:_5            :foaf/mbox                 "bob@example.com"]
- [:_6            :foaf/name                 {:value "Eve"}]
- ]
+ ;; Anonymous
+ [:_            :foaf/knows                :_5]
+
+ ;; Alice, Eve and Bob
+ [:_5           :foaf/name                 {:value "Ken"}]
+ [:_5           :foaf/age                  27]
+ [:_6           :foaf/knows                :_8]
+ [:_6           :foaf/name                 {:value "Alice"}]
+ [:_7           :foaf/name                 {:value "Eve"}]
+ [:_8           :foaf/knows                :_7]
+ [:_8           :foaf/name                 {:value "Bob"}]
+ [:_8           :foaf/mbox                 "bob@example.com"]]
+

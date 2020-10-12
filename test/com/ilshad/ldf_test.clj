@@ -43,9 +43,7 @@
 ;;
 
 (def decode-opts
-  {:object-lists?    false
-   :predicate-lists? false
-   :namespaces {""     "http://example.com/#"
+  {:namespaces {""     "http://example.com/#"
                 "foaf" "http://xmlns.com/foaf/0.1/"
                 "rel"  "http://www.perceive.net/schemas/relationship/"}})
 

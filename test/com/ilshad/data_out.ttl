@@ -10,7 +10,10 @@
     :a foaf:Person;
     foaf:name "Green Goblin";
     foaf:age 77;
-    rel:enemyOf :spiderman.
+    rel:enemyOf :spiderman;
+    foaf:knows _:0.
+
+_:0 foaf:name "Jerry".
 
 :spiderman
     :a foaf:Person;
@@ -19,26 +22,34 @@
     <http://schema.org/weight> 71.25;
     :gravity 1.663E-4;
     :isSuperHero true;
-    rel:enemyOf :green-goblin.
+    rel:enemyOf :green-goblin;
+    foaf:knows _:1.
 
-_:0 foaf:knows _:1.
+_:2 foaf:knows _:1.
 
 _:1
-    foaf:knows _:2, _:0.
+    foaf:knows _:4, _:2.
 
-_:2 foaf:name "Mike".
-
-[] foaf:knows _:3.
-
-_:3 foaf:name "Ken".
+_:3 foaf:name "Tom".
 
 _:4
-    foaf:name "Alice";
-    foaf:knows _:5.
+    foaf:name "Mike";
+    foaf:age 33;
+    foaf:knows _:3.
+
+[] foaf:knows _:5.
 
 _:5
-    foaf:knows _:6;
+    foaf:name "Ken";
+    foaf:age 27.
+
+_:6
+    foaf:knows _:8;
+    foaf:name "Alice".
+
+_:7 foaf:name "Eve".
+
+_:8
+    foaf:knows _:7;
     foaf:name "Bob";
     foaf:mbox <bob@example.com>.
-
-_:6 foaf:name "Eve".
